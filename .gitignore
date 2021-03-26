@@ -1,3 +1,6 @@
+#Log
+*.csv
+
 # Prerequisites
 *.d
 

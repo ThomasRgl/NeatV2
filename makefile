@@ -13,8 +13,8 @@ OLD_OFLAGS = -I/usr/include
 
 LFLAGS=-lm
 
-neat: $(NN) $(MAIN) $(SNAKE) 
-	$(GCC) $(CFLAGS) $(OFLAGS) -o neat $(NN) $(MAIN) $(SNAKE) $(LFLAGS)
+neat: $(NN) $(MAIN) $(SNAKE)
+	$(GCC) $(CFLAGS) $(OFLAGS2) -o neat $(NN) $(MAIN) $(SNAKE) $(LFLAGS)
 
 
 clean:
