@@ -8,23 +8,23 @@
 #include "snake/snake.h"
 #include "neuralNetwork/neuralNetwork.h"
 
-void initGlobalVar(){
-    if( NB_HIDDEN_LAYER == 0 ){
-        TOTAL_WEIGHT = ( NB_INPUT + 1 ) * NB_NEURONS_OUTPUT;
-    }
-    else{
-        TOTAL_WEIGHT = ( NB_INPUT + 1 ) * NB_NEURONS_HIDDEN;
-        for ( int i = 1; i < NB_NEURONS_HIDDEN; i ++)
-            TOTAL_WEIGHT =  ( NB_NEURONS_HIDDEN + 1 ) * NB_NEURONS_HIDDEN;
-        TOTAL_WEIGHT += ( NB_NEURONS_HIDDEN + 1 ) * NB_NEURONS_OUTPUT;
-
-    }
-
-    TAILLE_CROSSOVER_MAX = TOTAL_WEIGHT * CROSSOVER_RATE ;
-    printf("%d\n",TAILLE_CROSSOVER_MAX );
-    printf("%d\n",TOTAL_WEIGHT );
-    printf("%lf\n",CROSSOVER_RATE );
-}
+// void initGlobalVar(){
+//     if( NB_HIDDEN_LAYER == 0 ){
+//         TOTAL_WEIGHT = ( NB_INPUT + 1 ) * NB_NEURONS_OUTPUT;
+//     }
+//     else{
+//         TOTAL_WEIGHT = ( NB_INPUT + 1 ) * NB_NEURONS_HIDDEN;
+//         for ( int i = 1; i < NB_HIDDEN_LAYER; i ++)
+//             TOTAL_WEIGHT +=  ( NB_NEURONS_HIDDEN + 1 ) * NB_NEURONS_HIDDEN;
+//         TOTAL_WEIGHT += ( NB_NEURONS_HIDDEN + 1 ) * NB_NEURONS_OUTPUT;
+//
+//     }
+//
+//     TAILLE_CROSSOVER_MAX = TOTAL_WEIGHT * CROSSOVER_RATE ;
+//     printf("TAILLE_CROSSOVER_MAX %d\n",TAILLE_CROSSOVER_MAX );
+//     printf("TOTAL_WEIGHT %d\n",TOTAL_WEIGHT );
+//     printf("CROSSOVER_RATE %lf\n",CROSSOVER_RATE );
+// }
 
 void jump(int a){
     for( int i = 0; i < a; i++){
@@ -67,7 +67,7 @@ void playBest( NeuralNetwork * nn){
 
     //
     while (end == 0 && snake->health != 0) {
-        resultat = compute( nn, getInput(snake, NB_INPUT) );
+        resultat = compute( nn, getInput(snake, params.nbNeuronsInput) );
 
         //                      Affichage
         jump(10);
@@ -120,7 +120,7 @@ void game(NeuralNetwork * nn){
 
     //
     while (end == 0 && snake->health != 0) {
-        resultat = compute( nn, getInput(snake, NB_INPUT) );
+        resultat = compute( nn, getInput(snake, params.nbNeuronsInput) );
 
         //                      Affichage
         // jump(10);
@@ -163,7 +163,7 @@ void game(NeuralNetwork * nn){
 void run(Population *population, size_t gen ){
 
 
-    for (size_t i = 0; i < TAILLE_POPULATION; i++) {
+    for (size_t i = 0; i < params.taille_population; i++) {
         game(population->firstPopulation[i]);
     }
     calculateFitness(population);
@@ -181,14 +181,28 @@ void run(Population *population, size_t gen ){
 int main() {
     srand(time(NULL));
 
-    initGlobalVar();
+    NewConfig(
+        1000,       // size_t taille_population,
+
+        8,          // size_t nbNeuronsInput,
+        8,          // size_t nbNeuronsHidden,
+        4,          // size_t nbNeuronsOutput,
+
+        1,          // size_t nbHiddenLayer,
+
+        0.3,        // double mutationRate,
+        0.05,       // double sigmaMutation,
+        0.3         // double crossoverRate,
+    );
+
+
 
     fileScore = openLog("log/fruit.csv");
 
-    Population * population = newPopulation();
+    Population * population = newPopulation(  );
     //printNetwork(population->firstPopulation[0]);
 
-    for(size_t i = 0; i < 2001; i++){
+    for(size_t i = 0; i < 2000; i++){
         run(population, i);
         printf("gen :  %ld\n", i );
         writeLogScore(fileScore, population);

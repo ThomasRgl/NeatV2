@@ -26,6 +26,50 @@ double normalRandom(){
     return cos(2*3.14*v2)*sqrt(-2.*log(v1));
 }
 
+
+Config NewConfig(
+    size_t taille_population,
+
+    size_t nbNeuronsInput,
+    size_t nbNeuronsHidden,
+    size_t nbNeuronsOutput,
+
+    size_t nbHiddenLayer,
+
+    double mutationRate,
+    double sigmaMutation,
+    double crossoverRate
+){
+
+    params.taille_population = taille_population;
+
+    params.nbNeuronsInput = nbNeuronsInput;
+    params.nbNeuronsHidden = nbNeuronsHidden;
+    params.nbNeuronsOutput = nbNeuronsOutput;
+
+    params.nbHiddenLayer = nbHiddenLayer;
+
+    params.mutationRate = mutationRate;
+    params.sigmaMutation = sigmaMutation;
+    params.crossoverRate = crossoverRate;
+
+    if( params.nbHiddenLayer == 0 ){
+        params.totalWeight = ( params.nbNeuronsInput + 1 ) * params.nbNeuronsOutput;
+    }
+    else{
+        params.totalWeight = ( params.nbNeuronsInput + 1 ) * params.nbNeuronsHidden;
+        for ( size_t i = 1; i < params.nbHiddenLayer; i ++){
+            params.totalWeight +=  ( params.nbNeuronsHidden + 1 ) * params.nbNeuronsHidden;
+        }
+        params.totalWeight += ( params.nbNeuronsHidden + 1 ) * params.nbNeuronsOutput;
+    }
+
+    params.tailleCrossoverMax  = params.totalWeight * params.crossoverRate ;
+
+    return params;
+
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                              Layer                                /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +119,7 @@ void initWeigth(Layer * layer, size_t previousSize){
 }
 //
 void setInput(Layer * layer, double * inputList){
-    for(size_t i = 0; i < NB_INPUT; i++){
+    for(size_t i = 0; i < params.nbNeuronsInput; i++){
         layer->neurons[i] = sigmoid(inputList[i]);
     }
     free(inputList);
@@ -108,10 +152,10 @@ void mutateLayer(Layer * layer){
 
     for (size_t i = 0; i < size ; i++) {
 
-        if( MUTATION_RATE > (double) rand() / RAND_MAX ){ (layer->bias)[i] += normalRandom() * 0.05; }
+        if( params.mutationRate > (double) rand() / RAND_MAX ){ (layer->bias)[i] += normalRandom() * params.sigmaMutation; }
 
         for (size_t j = 0; j < previousSize; j++ ){
-            if( MUTATION_RATE > (double) rand() / RAND_MAX ){ (layer->weights)[i * previousSize + j] += normalRandom() * 0.05; }
+            if( params.mutationRate > (double) rand() / RAND_MAX ){ (layer->weights)[i * previousSize + j] += normalRandom() * params.sigmaMutation; }
         }
     }
 }
@@ -127,24 +171,24 @@ NeuralNetwork * newNeuralNetwork(){
 
     //
     //m_size = 2 + params.nhiddenlayer;
-    nn->size = 2 + NB_HIDDEN_LAYER ;
+    nn->size = 2 + params.nbHiddenLayer ;
 
     //
-    Layer * currentLayer = newLayer( NB_INPUT, NULL);
+    Layer * currentLayer = newLayer( params.nbNeuronsInput, NULL);
     Layer * previousLayer;
     nn->firstLayer = currentLayer;
 
 
-    for(size_t i = 0; i < NB_HIDDEN_LAYER; i++){
+    for(size_t i = 0; i < params.nbHiddenLayer; i++){
             previousLayer = currentLayer;
-            currentLayer = newLayer(NB_NEURONS_HIDDEN, previousLayer);
+            currentLayer = newLayer(params.nbNeuronsHidden, previousLayer);
             previousLayer->nextLayer = currentLayer;
             // lastLayer->nextLayer = currentLayer;
             // lastLayer = currentLayer;
     }
 
     previousLayer = currentLayer;
-    currentLayer = newLayer(NB_NEURONS_OUTPUT, previousLayer);
+    currentLayer = newLayer(params.nbNeuronsOutput, previousLayer);
     previousLayer->nextLayer = currentLayer;
     //lastLayer->nextLayer = currentLayer;
 
@@ -204,9 +248,9 @@ void Oldcrossover(NeuralNetwork * nn, NeuralNetwork * father, NeuralNetwork * mo
     //     tot += layer->size * (layer->previousLayer->size + 1);
     //     layer = layer->nextLayer;
     // }
-Layer * layer;
+    Layer * layer;
 
-    size_t cut = (tot * CROSSOVER_RATE);
+    size_t cut = (tot * params.tailleCrossoverMax);
     size_t remains = tot - cut;
 
     size_t nweights;
@@ -260,8 +304,8 @@ Layer * layer;
 }
 
 void crossover(NeuralNetwork * nn, NeuralNetwork * father, NeuralNetwork * mother ){
-    int remainingToLocation = ((double) rand()/ (double) RAND_MAX )*(TOTAL_WEIGHT-TAILLE_CROSSOVER_MAX);
-    int crossoverRemaining = TAILLE_CROSSOVER_MAX;
+    int remainingToLocation = ((double) rand()/ (double) RAND_MAX )*(params.totalWeight - params.tailleCrossoverMax);
+    int crossoverRemaining = params.tailleCrossoverMax;
 
     Layer * layerA = father->firstLayer->nextLayer;
     Layer * layerB = mother->firstLayer->nextLayer;
@@ -303,7 +347,7 @@ void mutate(NeuralNetwork * nn ){
 
     //
     while(layer){
-        mutateLayer(layer);
+        mutateLayer(layer );
         layer = layer->nextLayer;
     }
 }
@@ -322,16 +366,16 @@ void setScore(NeuralNetwork * nn, double score,  double fruit){
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //
-Population * newPopulation(){
+Population * newPopulation( ){
     Population * population;
     population = malloc( sizeof(Population) );
 
-    population->size = TAILLE_POPULATION;
+    population->size = params.taille_population;
 
-    population->firstPopulation = malloc(TAILLE_POPULATION * sizeof(NeuralNetwork)) ;
-    population->secondPopulation = malloc(TAILLE_POPULATION * sizeof(NeuralNetwork)) ;
+    population->firstPopulation = malloc(population->size * sizeof(NeuralNetwork)) ;
+    population->secondPopulation = malloc(population->size * sizeof(NeuralNetwork)) ;
 
-    for(size_t i = 0; i < TAILLE_POPULATION; i++){
+    for(size_t i = 0; i < population->size; i++){
         population->firstPopulation[i] = newNeuralNetwork();
         population->secondPopulation[i] = newNeuralNetwork();
     }
@@ -388,8 +432,8 @@ NeuralNetwork * pickOne(Population *population ){
 
 NeuralNetwork * bestElement(Population *population ){
     double BestScore = 0;
-    int  index = 0;
-    for( int i = 0; i < TAILLE_POPULATION; i++){
+    size_t  index = 0;
+    for( size_t i = 0; i < population->size; i++){
         if(population->firstPopulation[i]->bruteScore > BestScore){
             index = i;
             BestScore = population->firstPopulation[i]->bruteScore;
@@ -460,7 +504,7 @@ void printPopulaton(Population *population ){
     printf("//////////////////////////////////////////////\n" );
     printf("///////             SECOND            ////////\n" );
     printf("//////////////////////////////////////////////\n" );
-    for( int i = 0; i < TAILLE_POPULATION; i++){
+    for( size_t i = 0; i < population->size; i++){
         printNetwork( population->secondPopulation[i]);
     }
 
@@ -468,7 +512,7 @@ void printPopulaton(Population *population ){
     printf("//////////////////////////////////////////////\n" );
     printf("///////              FIRST            ////////\n" );
     printf("//////////////////////////////////////////////\n" );
-    for( int i = 0; i < TAILLE_POPULATION; i++){
+    for( size_t i = 0; i < population->size; i++){
         printNetwork( population->firstPopulation[i]);
     }
 
@@ -479,7 +523,7 @@ void printPopulaton(Population *population ){
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void freePopulation( Population * population ){
-    for( int i = 0; i < TAILLE_POPULATION; i++){
+    for( size_t i = 0; i < population->size; i++){
         freeNeuralNetwork( population->firstPopulation[i]);
         freeNeuralNetwork( population->secondPopulation[i]);
     }
@@ -551,7 +595,7 @@ FILE* openLog( char *fileName ){
 
 void writeLogScore ( FILE* file,  Population * population ){
 
-    for( int i = 0; i < TAILLE_POPULATION; i++){
+    for( size_t i = 0; i < params.taille_population; i++){
 
         fprintf( file, "%lf,",population->firstPopulation[i]->nbFruit);
         //fprintf( file, "%lf,",population[i]->score);

@@ -1,19 +1,19 @@
 #ifndef NN_H
     #define NN_H
-
-    #define TAILLE_POPULATION 1000
-    //#define CROSSOVER_NUMBER 100
-    #define NB_INPUT 8
-    #define NB_HIDDEN_LAYER 1
-    #define NB_NEURONS_HIDDEN 8
-    #define NB_NEURONS_OUTPUT 4
-    #define MUTATION_RATE 0.3
-    #define SIGMA_MUTATION 0.15
-    //#define SIGMA_CROSSOVER 1
-    #define CROSSOVER_RATE 0.3
-
-    int TAILLE_CROSSOVER_MAX ;//10 //= (TAILLE_POPULATION * CROSSOVER_PERCENT ) / 100;
-    int TOTAL_WEIGHT ; //40
+    // 
+    // #define TAILLE_POPULATION 1000
+    // //#define CROSSOVER_NUMBER 100
+    // #define NB_INPUT 8
+    // #define NB_HIDDEN_LAYER 1
+    // #define NB_NEURONS_HIDDEN 8
+    // #define NB_NEURONS_OUTPUT 4
+    // #define MUTATION_RATE 0.3
+    // #define SIGMA_MUTATION 0.15
+    // //#define SIGMA_CROSSOVER 1
+    // #define CROSSOVER_RATE 0.3
+    //
+    // int TAILLE_CROSSOVER_MAX ;//10 //= (TAILLE_POPULATION * CROSSOVER_PERCENT ) / 100;
+    // int TOTAL_WEIGHT ; //40
 
     char *inputChar[20];// = {"haut","bas","gauche","droite"};
     char *outputChar[4];
@@ -21,6 +21,25 @@
     FILE* fileScore;
     FILE* fileId;
     FILE* fileFruit;
+
+
+
+    typedef struct Config{
+        size_t taille_population;
+
+        size_t nbNeuronsInput;
+        size_t nbNeuronsHidden;
+        size_t nbNeuronsOutput;
+
+        size_t nbHiddenLayer;
+
+        double mutationRate;
+        double sigmaMutation;
+        double crossoverRate;
+
+        size_t tailleCrossoverMax ;
+        size_t totalWeight ;
+    }Config;
 
     typedef struct Layer
     {
@@ -43,7 +62,6 @@
         double fitness;
 
         size_t size;
-
         struct Layer * firstLayer;
         struct Layer * lastLayer;
 
@@ -54,7 +72,6 @@
     {
 
         size_t size;
-
         /*
         struct NeuralNetwork ***current;
         struct NeuralNetwork ***old;
@@ -63,6 +80,9 @@
         struct NeuralNetwork ** secondPopulation;
 
     }Population;
+
+    Config params;
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                              Other                                /////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,6 +90,20 @@
     double sigmoid(double x);
     double rand_gen();
     double normalRandom();
+
+    Config NewConfig(
+        size_t taille_population,
+
+        size_t nbNeuronsInput,
+        size_t nbNeuronsHidden,
+        size_t nbNeuronsOutput,
+
+        size_t nbHiddenLayer,
+
+        double mutationRate,
+        double sigmaMutation,
+        double crossoverRate
+    );
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                              Layer                                /////////////////
@@ -97,7 +131,7 @@
 
     void mutate(NeuralNetwork * nn );
 
-    void setScore(NeuralNetwork * nn, double score, double nbFruit);
+    void setScore(NeuralNetwork * nn, double score,  double fruit);
 
 
 
