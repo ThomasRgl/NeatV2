@@ -1,19 +1,5 @@
 #ifndef NN_H
     #define NN_H
-    // 
-    // #define TAILLE_POPULATION 1000
-    // //#define CROSSOVER_NUMBER 100
-    // #define NB_INPUT 8
-    // #define NB_HIDDEN_LAYER 1
-    // #define NB_NEURONS_HIDDEN 8
-    // #define NB_NEURONS_OUTPUT 4
-    // #define MUTATION_RATE 0.3
-    // #define SIGMA_MUTATION 0.15
-    // //#define SIGMA_CROSSOVER 1
-    // #define CROSSOVER_RATE 0.3
-    //
-    // int TAILLE_CROSSOVER_MAX ;//10 //= (TAILLE_POPULATION * CROSSOVER_PERCENT ) / 100;
-    // int TOTAL_WEIGHT ; //40
 
     char *inputChar[20];// = {"haut","bas","gauche","droite"};
     char *outputChar[4];
@@ -158,6 +144,7 @@
     /////////////////                            Affichage                              /////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     void printNetwork(NeuralNetwork *nn );
+
     void printPopulaton(Population *population );
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -165,16 +152,22 @@
     /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     void freePopulation( Population * population);
+
     void freeNeuralNetwork( NeuralNetwork * nn);
+
     void freeLayer( Layer * layer);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                               Log                                 /////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     FILE* openLog( char *fileName );
+
     void writeLogScore ( FILE* fichier,  Population * population );
+
     void writeLogId ( FILE* fichier,  Population * population );
+
     void writeLogFruit( FILE* fichier,  Population * population );
+
     void closeLog( FILE* fichier);
 
 

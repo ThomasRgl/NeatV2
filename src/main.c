@@ -8,29 +8,11 @@
 #include "snake/snake.h"
 #include "neuralNetwork/neuralNetwork.h"
 
-// void initGlobalVar(){
-//     if( NB_HIDDEN_LAYER == 0 ){
-//         TOTAL_WEIGHT = ( NB_INPUT + 1 ) * NB_NEURONS_OUTPUT;
-//     }
-//     else{
-//         TOTAL_WEIGHT = ( NB_INPUT + 1 ) * NB_NEURONS_HIDDEN;
-//         for ( int i = 1; i < NB_HIDDEN_LAYER; i ++)
-//             TOTAL_WEIGHT +=  ( NB_NEURONS_HIDDEN + 1 ) * NB_NEURONS_HIDDEN;
-//         TOTAL_WEIGHT += ( NB_NEURONS_HIDDEN + 1 ) * NB_NEURONS_OUTPUT;
-//
-//     }
-//
-//     TAILLE_CROSSOVER_MAX = TOTAL_WEIGHT * CROSSOVER_RATE ;
-//     printf("TAILLE_CROSSOVER_MAX %d\n",TAILLE_CROSSOVER_MAX );
-//     printf("TOTAL_WEIGHT %d\n",TOTAL_WEIGHT );
-//     printf("CROSSOVER_RATE %lf\n",CROSSOVER_RATE );
-// }
 
 void jump(int a){
     for( int i = 0; i < a; i++){
         printf("\n");
     }
-
 }
 
 
