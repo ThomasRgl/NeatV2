@@ -391,33 +391,40 @@ Population * newPopulation( ){
 
 
 
+//
+// void calculateFitness(Population *population ){
+//     double sum = 0;
+//
+//     NeuralNetwork ** ListNeuralNetwork = population->firstPopulation;
+//
+//     for( size_t i = 0; i < population->size; i++)
+//         sum += ListNeuralNetwork[i]->score;
+//
+//     for( size_t i = 0; i < population->size; i++)
+//         ListNeuralNetwork[i]->fitness = ListNeuralNetwork[i]->score  / sum;
+// }
+//
+// void evolve(Population *population ){
+//
+//     NeuralNetwork * tmp;
+//     for( size_t i = 0; i < population->size; i++){
+//         tmp = population->secondPopulation[i];
+//
+//         crossover(tmp, pickOne(population), pickOne(population));
+//         mutate(tmp);
+//     }
+//     NeuralNetwork ** swap = population->firstPopulation;
+//     population->firstPopulation = population->secondPopulation;
+//     population->secondPopulation = swap;
+//     return;
+// }
 
-void calculateFitness(Population *population ){
-    double sum = 0;
-
-    NeuralNetwork ** ListNeuralNetwork = population->firstPopulation;
-
-    for( size_t i = 0; i < population->size; i++)
-        sum += ListNeuralNetwork[i]->score;
-
-    for( size_t i = 0; i < population->size; i++)
-        ListNeuralNetwork[i]->fitness = ListNeuralNetwork[i]->score  / sum;
+void swap(Population * population){
+        NeuralNetwork ** swap = population->firstPopulation;
+        population->firstPopulation = population->secondPopulation;
+        population->secondPopulation = swap;
 }
 
-void evolve(Population *population ){
-
-    NeuralNetwork * tmp;
-    for( size_t i = 0; i < population->size; i++){
-        tmp = population->secondPopulation[i];
-
-        crossover(tmp, pickOne(population), pickOne(population));
-        mutate(tmp);
-    }
-    NeuralNetwork ** swap = population->firstPopulation;
-    population->firstPopulation = population->secondPopulation;
-    population->secondPopulation = swap;
-    return;
-}
 
 NeuralNetwork * pickOne(Population *population ){
     size_t index = 0;
@@ -496,12 +503,43 @@ Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
 void *runFils(void *voidThread ){
 
     Thread * thread = (Thread *)voidThread;
-    for(size_t i = 0; i < 5; i++){
+    for(size_t gen = 0; gen < 500; gen++){
+
+        // pthread_mutex_lock(&thread->mutex);
+        // printf("FILS - I START GAMING\n" );
+        // for(int k = 0; k < 100000000; k++){}
+        // printf("FILS - I FINISH GAMING\n" );
+        // thread->lock = 0;
+        // pthread_mutex_unlock(&thread->mutex);
         while(thread->lock != 1){}
-        printf("FILS - I START WORKING\n" );
-        for(int k = 0; k < 1000000000; k++){}
-        printf("FILS - I FINISH WORKING\n" );
+        printf("FILS - I START GAMING\n" );
+        for (size_t i = 0; i < thread->size; i++) {
+            game(thread->ListNeuralNetwork_A[i]);
+        }
+        printf("FILS - I FINISH GAMING\n" );
         thread->lock = 0;
+
+        while( ! thread->lock){}
+        printf("FILS - I START FITNESSING\n" );
+        calculateFitness(thread);
+        printf("FILS - I FINISH FITNESSING\n" );
+        thread->lock = 0;
+
+        while( ! thread->lock){}
+        printf("FILS - I START EVOLVING\n" );
+        evolve(thread);
+        printf("FILS - I FINISH EVOLVING\n" );
+        thread->lock = 0;
+
+
+
+        // printPopulaton(population);
+        // getchar();
+
+
+
+
+
     }
     // printf("Thread %d\n", thread);
     // printf("thread - début : %ld\n", thread->debut );
@@ -527,25 +565,52 @@ void runPere(){
         // printf("taille : %ld\n", threadList[i]->size );
         // printf("début : %ld\n", threadList[i]->debut );
         // printf("fin : %ld\n\n", threadList[i]->fin );
+        // pthread_mutex_lock(&threadList[i]->mutex);
         pthread_create(&idList[i], NULL, runFils, threadList[i] );
     }
 
-    for(size_t g = 0; g < 5; g++){
+    //
+    for(size_t g = 0; g < 500; g++){
         printf("GEN : %ld\n", g );
-        // SendMsg(gamez)
+
+        // GAME
         for( size_t i = 0; i < params.nbThread; i++){
             // pthread_mutex_lock(&threadList[i]->mutex);
             threadList[i]->lock = 1;
+            // pthread_mutex_unlock(&threadList[i]->mutex);
         }
 
-        printf("PERE - start waitingForUnlock\n" );
+        printf("PERE - j'attend la fin du gaming\n" );
 
         for( size_t i = 0; i < params.nbThread; i++){
             // pthread_mutex_lock(&threadList[i]->mutex);
-            while(threadList[i]->lock){
-
-            }
+            while(threadList[i]->lock){}
+            // pthread_mutex_lock(&threadList[i]->mutex);
         }
+
+
+        // FITNESS
+        for( size_t i = 0; i < params.nbThread; i++){
+            threadList[i]->lock = 1;
+        }
+
+        printf("PERE - j'attend la fin du calcul de fitness\n" );
+
+        for( size_t i = 0; i < params.nbThread; i++){
+            while(threadList[i]->lock){}
+        }
+
+        // EVOLUTION
+        for( size_t i = 0; i < params.nbThread; i++){
+            threadList[i]->lock = 1;
+        }
+
+        printf("PERE - j'attend la fin du calcul de l'evolution\n" );
+
+        for( size_t i = 0; i < params.nbThread; i++){
+            while(threadList[i]->lock){}
+        }
+
 
         printf("FIN GEN \n" );
 
@@ -563,7 +628,7 @@ void runPere(){
 
 
         // printf("gen :  %ld\n", i );
-        // writeLogScore(fileScore, population);
+        writeLogScore(fileScore, population);
 
     }
 
@@ -579,6 +644,37 @@ void runPere(){
 
     return;
 }
+
+void calculateFitness(Thread *thread ){
+    double sum = 0;
+
+    NeuralNetwork ** ListNeuralNetwork = thread->population->firstPopulation;
+
+    for( size_t i = 0; i < thread->population->size; i++)
+        sum += ListNeuralNetwork[i]->score;
+
+    for( size_t i = 0; i < thread->size; i++)
+        thread->ListNeuralNetwork_A[i]->fitness = thread->ListNeuralNetwork_A[i]->score  / sum;
+}
+
+void evolve(Thread *thread ){
+
+    NeuralNetwork * tmp;
+    for( size_t i = 0; i < thread->size; i++){
+        // tmp = population->secondPopulation[i];
+        tmp = thread->ListNeuralNetwork_B[i];
+
+        crossover(tmp, pickOne(thread->population), pickOne(thread->population));
+        mutate(tmp);
+    }
+
+    NeuralNetwork ** swap = thread->ListNeuralNetwork_A;
+    thread->ListNeuralNetwork_A = thread->ListNeuralNetwork_B;
+    thread->ListNeuralNetwork_B = swap;
+
+    return;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////

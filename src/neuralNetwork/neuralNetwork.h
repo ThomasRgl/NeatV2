@@ -163,9 +163,11 @@
     //
     // void game(NeuralNetwork * nn);
 
-    void calculateFitness(Population *population );
+    // void calculateFitness(Population *population );
+    //
+    // void evolve(Population *population );
 
-    void evolve(Population *population );
+    void swap(Population *population );
 
     NeuralNetwork * pickOne(Population *population );
 
@@ -179,6 +181,10 @@
     void *runFils(void *voidThread );
 
     void runPere( );
+
+    void calculateFitness(Thread *thread );
+
+    void evolve(Thread *thread );
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                              Game                                 /////////////////
