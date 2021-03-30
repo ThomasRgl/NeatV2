@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+#include "../snake/snake.h"
 #include "neuralNetwork.h"
 
 
@@ -38,7 +40,9 @@ Config NewConfig(
 
     double mutationRate,
     double sigmaMutation,
-    double crossoverRate
+    double crossoverRate,
+
+    size_t nbThread
 ){
 
     params.taille_population = taille_population;
@@ -66,6 +70,8 @@ Config NewConfig(
 
     params.tailleCrossoverMax  = params.totalWeight * params.crossoverRate ;
 
+    params.nbThread = nbThread;
+    params.tailleThread = params.taille_population / nbThread;
     return params;
 
 }
@@ -445,8 +451,199 @@ NeuralNetwork * bestElement(Population *population ){
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////                             Thread                                /////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
+
+    Thread * thread = malloc(sizeof(Thread));
+
+    thread->id = id;
+    thread->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+    thread->population = population;
+
+    size_t tailleThread = params.tailleThread;
+
+    if(numThread == params.nbThread - 1 ){
+        tailleThread += params.taille_population % params.nbThread;
+    }
+
+    size_t debut = numThread * params.tailleThread;
+
+    thread->size = tailleThread;
+    thread->debut = numThread * params.tailleThread;
+    thread->fin = thread->debut + thread->size - 1;
+
+    // printf("NT - début : %ld\n", thread->debut );
+    // printf("NT - fin : %ld\n\n", thread->fin );
+
+    thread->ListNeuralNetwork_A = malloc( thread->size * sizeof(Thread) );
+    thread->ListNeuralNetwork_B = malloc( thread->size * sizeof(Thread) );
+
+    for( size_t i = 0; i < thread->size; i++ ){
+        thread->ListNeuralNetwork_A[i] = population->firstPopulation[ debut + i ];
+        thread->ListNeuralNetwork_B[i] = population->secondPopulation[ debut + i ];
+        // printf("%ld \n", debut + i);
+    }
+
+
+
+
+    return thread;
+}
+
+//
+void *runFils(void *voidThread ){
+
+    Thread * thread = (Thread *)voidThread;
+    for(size_t i = 0; i < 5; i++){
+        while(thread->lock != 1){}
+        printf("FILS - I START WORKING\n" );
+        for(int k = 0; k < 1000000000; k++){}
+        printf("FILS - I FINISH WORKING\n" );
+        thread->lock = 0;
+    }
+    // printf("Thread %d\n", thread);
+    // printf("thread - début : %ld\n", thread->debut );
+    // printf("thread - fin : %ld\n\n", thread->fin );
+    return 0;
+}
+
+void runPere(){
+
+    fileScore = openLog("log/fruit.csv");
+
+
+    Population * population = newPopulation(  );
+    //printNetwork(population->firstPopulation[0]);
+
+    Thread ** threadList = malloc(params.nbThread * sizeof(Thread));
+    pthread_t * idList = malloc(params.nbThread * sizeof(pthread_t));
+
+    //
+    for( size_t i = 0; i < params.nbThread; i++){
+        threadList[i] = NewThread(population, i, &idList[i] );
+        // printf("O -  %d\n", threadList[i] );
+        // printf("taille : %ld\n", threadList[i]->size );
+        // printf("début : %ld\n", threadList[i]->debut );
+        // printf("fin : %ld\n\n", threadList[i]->fin );
+        pthread_create(&idList[i], NULL, runFils, threadList[i] );
+    }
+
+    for(size_t g = 0; g < 5; g++){
+        printf("GEN : %ld\n", g );
+        // SendMsg(gamez)
+        for( size_t i = 0; i < params.nbThread; i++){
+            // pthread_mutex_lock(&threadList[i]->mutex);
+            threadList[i]->lock = 1;
+        }
+
+        printf("PERE - start waitingForUnlock\n" );
+
+        for( size_t i = 0; i < params.nbThread; i++){
+            // pthread_mutex_lock(&threadList[i]->mutex);
+            while(threadList[i]->lock){
+
+            }
+        }
+
+        printf("FIN GEN \n" );
+
+        // for( size_t i = 0; i < params.nbThread; i++){
+        //     while(!run_thre)
+        //     pthread_mutex_lock(&threadList[i]->mutex);
+        // }
+        // waitRep(FinGamez)
+        //
+        // SendMsg(calculFitness)
+        // waitRep(FinCalculFitness)
+        //
+        // SendMessage(Evolvez)
+        // WaitRep(FinEvolvez)
+
+
+        // printf("gen :  %ld\n", i );
+        // writeLogScore(fileScore, population);
+
+    }
+
+
+    for( size_t i = 0; i < params.nbThread; i++){
+        pthread_join(idList[i], NULL );
+        printf("FIN THREAD %ld \n", i );
+    }
+
+
+    freePopulation( population );
+    closeLog(fileScore);
+
+    return;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////                              Game                                 /////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void game(NeuralNetwork * nn){
+
+    Snake * snake ;
+
+    int resultat = 4;
+    int end = 0;
+
+    initialiseGrille();
+    snake = malloc(sizeof(Snake));
+    initSnake(snake);
+
+    //
+    while (end == 0 && snake->health != 0) {
+        resultat = compute( nn, getInput(snake, params.nbNeuronsInput) );
+
+        //                      Affichage
+        // jump(10);
+        // printNetwork(population[i]);
+        // afficherData(population[i]);
+        // afficherJeu(resultat);
+        // printf(">\n");
+        // getchar();
+
+        switch (resultat) {
+            case 0:
+                end = move(snake, -1, 0);
+                break;
+            case 1:
+                end = move(snake, 1, 0);
+                break;
+            case 2:
+                end = move(snake, 0, -1);
+                break;
+            case 3:
+                end = move(snake, 0, 1);
+                break;
+            default:
+                //break;
+                //printf("fin du jeu\n" );
+                printf("%d\n", resultat );
+                exit(0);
+                end = 1;
+                break;
+        }
+
+    }
+
+    setScore(nn, getScore(snake), getFruit(snake));
+    destroySnake(snake);
+
+    return;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                            Affichage                              /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void printNetwork(NeuralNetwork *nn ){
 
 

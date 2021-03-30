@@ -25,6 +25,10 @@
 
         size_t tailleCrossoverMax ;
         size_t totalWeight ;
+
+        size_t nbThread;
+        size_t tailleThread;
+
     }Config;
 
     typedef struct Layer
@@ -53,6 +57,8 @@
 
     }NeuralNetwork;
 
+
+
     //
     typedef struct Population
     {
@@ -65,7 +71,31 @@
         struct NeuralNetwork ** firstPopulation;
         struct NeuralNetwork ** secondPopulation;
 
+
+
     }Population;
+
+
+    //
+    typedef struct Thread
+    {
+        Population * population;
+
+        pthread_t * id;
+        short lock;
+        pthread_mutex_t mutex;
+
+        size_t size;
+        size_t debut;
+        size_t fin;
+
+        NeuralNetwork ** ListNeuralNetwork_A;
+        NeuralNetwork ** ListNeuralNetwork_B;
+
+
+
+    }Thread;
+
 
     Config params;
 
@@ -88,7 +118,9 @@
 
         double mutationRate,
         double sigmaMutation,
-        double crossoverRate
+        double crossoverRate,
+
+        size_t nbThread
     );
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,6 +170,22 @@
     NeuralNetwork * pickOne(Population *population );
 
     NeuralNetwork * bestElement(Population *population );
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////                             Thread                                /////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    Thread * NewThread(Population *population, size_t numThread, pthread_t * id);
+
+    void *runFils(void *voidThread );
+
+    void runPere( );
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////                              Game                                 /////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    void game(NeuralNetwork * nn);
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <pthread.h>
 
 #include "snake/snake.h"
 #include "neuralNetwork/neuralNetwork.h"
@@ -89,75 +89,24 @@ void playBest( NeuralNetwork * nn){
     return;
 }
 
-void game(NeuralNetwork * nn){
-
-    Snake * snake ;
-
-    int resultat = 4;
-    int end = 0;
-
-    initialiseGrille();
-    snake = malloc(sizeof(Snake));
-    initSnake(snake);
-
-    //
-    while (end == 0 && snake->health != 0) {
-        resultat = compute( nn, getInput(snake, params.nbNeuronsInput) );
-
-        //                      Affichage
-        // jump(10);
-        // printNetwork(population[i]);
-        // afficherData(population[i]);
-        // afficherJeu(resultat);
-        // printf(">\n");
-        // getchar();
-
-        switch (resultat) {
-            case 0:
-                end = move(snake, -1, 0);
-                break;
-            case 1:
-                end = move(snake, 1, 0);
-                break;
-            case 2:
-                end = move(snake, 0, -1);
-                break;
-            case 3:
-                end = move(snake, 0, 1);
-                break;
-            default:
-                //break;
-                //printf("fin du jeu\n" );
-                printf("%d\n", resultat );
-                exit(0);
-                end = 1;
-                break;
-        }
-
-    }
-
-    setScore(nn, getScore(snake), getFruit(snake));
-    destroySnake(snake);
-
-    return;
-}
-
-void run(Population *population, size_t gen ){
 
 
-    for (size_t i = 0; i < params.taille_population; i++) {
-        game(population->firstPopulation[i]);
-    }
-    calculateFitness(population);
-    // printPopulaton(population);
-    // getchar();
-    if( gen%500 == 0){
-        playBest(bestElement(population));
-    }
-    evolve(population);
-
-    return;
-}
+// void run(Population *population, size_t gen ){
+//
+//
+//     for (size_t i = 0; i < params.taille_population; i++) {
+//         game(population->firstPopulation[i]);
+//     }
+//     calculateFitness(population);
+//     // printPopulaton(population);
+//     // getchar();
+//     if( gen%500 == 0){
+//         playBest(bestElement(population));
+//     }
+//     evolve(population);
+//
+//     return;
+// }
 
 
 int main() {
@@ -174,25 +123,28 @@ int main() {
 
         0.3,        // double mutationRate,
         0.05,       // double sigmaMutation,
-        0.3         // double crossoverRate,
+        0.3,        // double crossoverRate,
+
+        5           //size_t nbThread
     );
+    //Config via fichier dans le futur !
+    //vérifier que le nb de thread > 1
 
 
+    runPere();
 
-    fileScore = openLog("log/fruit.csv");
 
-    Population * population = newPopulation(  );
-    //printNetwork(population->firstPopulation[0]);
-
-    for(size_t i = 0; i < 2000; i++){
-        run(population, i);
-        printf("gen :  %ld\n", i );
-        writeLogScore(fileScore, population);
-
-    }
-
-    freePopulation( population );
-    closeLog(fileScore);
+    // return 0;
+    //
+    // for(size_t i = 0; i < 2000; i++){
+    //     run(population, i);
+    //     printf("gen :  %ld\n", i );
+    //     writeLogScore(fileScore, population);
+    //
+    // }
+    //
+    // freePopulation( population );
+    // closeLog(fileScore);
 
 
     return 0;
