@@ -49,7 +49,7 @@ void playBest( NeuralNetwork * nn){
 
     //
     while (end == 0 && snake->health != 0) {
-        resultat = compute( nn, getInput(snake, params.nbNeuronsInput) );
+        resultat = computeNN( nn, getInput(snake, params.nbNeuronsInput) );
 
         //                      Affichage
         jump(10);
@@ -91,60 +91,46 @@ void playBest( NeuralNetwork * nn){
 
 
 
-// void run(Population *population, size_t gen ){
-//
-//
-//     for (size_t i = 0; i < params.taille_population; i++) {
-//         game(population->firstPopulation[i]);
-//     }
-//     calculateFitness(population);
-//     // printPopulaton(population);
-//     // getchar();
-//     if( gen%500 == 0){
-//         playBest(bestElement(population));
-//     }
-//     evolve(population);
-//
-//     return;
-// }
-
 
 int main() {
     srand(time(NULL));
 
-    NewConfig(
-        1000,       // size_t taille_population,
-
-        8,          // size_t nbNeuronsInput,
-        8,          // size_t nbNeuronsHidden,
-        4,          // size_t nbNeuronsOutput,
-
-        1,          // size_t nbHiddenLayer,
-
-        0.3,        // double mutationRate,
-        0.05,       // double sigmaMutation,
-        0.3,        // double crossoverRate,
-
-        5           //size_t nbThread
-    );
-    //Config via fichier dans le futur !
-    //vérifier que le nb de thread > 1
+    struct timespec start, finish;
+    double elapsed;
 
 
-    runPere();
+
+    for(size_t i = 1; i < 10; i++){
+        NewConfig(
+            1000,       // size_t taille_population,
+            300,        //size_t nombre de generation
+
+            8,          // size_t nbNeuronsInput,
+            8,          // size_t nbNeuronsHidden,
+            4,          // size_t nbNeuronsOutput,
+
+            1,          // size_t nbHiddenLayer,
+
+            0.3,        // double mutationRate,
+            0.05,       // double sigmaMutation,
+            0.3,        // double crossoverRate,
+
+            i           //size_t nbThread
+        );
 
 
-    // return 0;
-    //
-    // for(size_t i = 0; i < 2000; i++){
-    //     run(population, i);
-    //     printf("gen :  %ld\n", i );
-    //     writeLogScore(fileScore, population);
-    //
-    // }
-    //
-    // freePopulation( population );
-    // closeLog(fileScore);
+
+
+        //lance l'ia et chronometre le temps d'execution
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        runPere();
+        clock_gettime(CLOCK_MONOTONIC, &finish);
+
+        elapsed = (finish.tv_sec - start.tv_sec);
+        elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+        printf("%ld, %lf\n",i,elapsed );
+    }
 
 
     return 0;

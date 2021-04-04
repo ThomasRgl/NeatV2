@@ -19,7 +19,7 @@ double sigmoid(double x){
 }
 
 double rand_gen(){
-    return ( (double)(rand()) + 1. )/( (double)(RAND_MAX) + 1. );
+    return ( (double)(rand_r(&seed)) + 1. )/( (double)(RAND_MAX) + 1. );
 }
 
 double normalRandom(){
@@ -31,6 +31,7 @@ double normalRandom(){
 
 Config NewConfig(
     size_t taille_population,
+    size_t generation,
 
     size_t nbNeuronsInput,
     size_t nbNeuronsHidden,
@@ -46,6 +47,7 @@ Config NewConfig(
 ){
 
     params.taille_population = taille_population;
+    params.generation = generation;
 
     params.nbNeuronsInput = nbNeuronsInput;
     params.nbNeuronsHidden = nbNeuronsHidden;
@@ -115,11 +117,11 @@ Layer * newLayer(size_t size, Layer * previousLayer){
 
 void initWeigth(Layer * layer, size_t previousSize){
     for(size_t i = 0; i < layer->size; i++){
-        layer->bias[i] = 1 - ((double)rand() / (double)RAND_MAX)*2 ;
+        layer->bias[i] = 1 - ((double)rand_r(&seed) / (double)RAND_MAX)*2 ;
     }
 
     for(size_t i = 0; i < layer->size * previousSize; i++){
-        layer->weights[i] = 1 - ((double)rand() / (double)RAND_MAX)*2 ;
+        layer->weights[i] = 1 - ((double)rand_r(&seed) / (double)RAND_MAX)*2 ;
     }
 
 }
@@ -128,7 +130,7 @@ void setInput(Layer * layer, double * inputList){
     for(size_t i = 0; i < params.nbNeuronsInput; i++){
         layer->neurons[i] = sigmoid(inputList[i]);
     }
-    free(inputList);
+    // free(inputList);
 }
 
 //
@@ -147,6 +149,7 @@ void computeLayer(Layer * layer){
         }
 
         layer->neurons[i] = sigmoid(s);
+        // layer->neurons[i] = s;
     }
 }
 
@@ -158,10 +161,10 @@ void mutateLayer(Layer * layer){
 
     for (size_t i = 0; i < size ; i++) {
 
-        if( params.mutationRate > (double) rand() / RAND_MAX ){ (layer->bias)[i] += normalRandom() * params.sigmaMutation; }
+        if( params.mutationRate > (double) rand_r(&seed) / RAND_MAX ){ (layer->bias)[i] += normalRandom() * params.sigmaMutation; }
 
         for (size_t j = 0; j < previousSize; j++ ){
-            if( params.mutationRate > (double) rand() / RAND_MAX ){ (layer->weights)[i * previousSize + j] += normalRandom() * params.sigmaMutation; }
+            if( params.mutationRate > (double) rand_r(&seed) / RAND_MAX ){ (layer->weights)[i * previousSize + j] += normalRandom() * params.sigmaMutation; }
         }
     }
 }
@@ -169,7 +172,7 @@ void mutateLayer(Layer * layer){
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                          NeuralNetwork                            /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-NeuralNetwork * newNeuralNetwork(){
+NeuralNetwork * newNeuralNetwork( size_t numNN ) {
 
     //
     NeuralNetwork * nn;
@@ -178,7 +181,7 @@ NeuralNetwork * newNeuralNetwork(){
     //
     //m_size = 2 + params.nhiddenlayer;
     nn->size = 2 + params.nbHiddenLayer ;
-
+    nn->numNN = numNN;
     //
     Layer * currentLayer = newLayer( params.nbNeuronsInput, NULL);
     Layer * previousLayer;
@@ -207,8 +210,9 @@ NeuralNetwork * newNeuralNetwork(){
     return nn;
 
 }
+
 //
-size_t compute(NeuralNetwork * nn, double * inputList ){
+size_t computeNN(NeuralNetwork * nn, double * inputList ){
 
     //
     Layer * layer = nn->firstLayer;
@@ -219,6 +223,7 @@ size_t compute(NeuralNetwork * nn, double * inputList ){
     //
     while(layer){
         computeLayer(layer);
+        // boucle(1000);
         layer = layer->nextLayer;
     }
     return output( nn );
@@ -310,7 +315,7 @@ void Oldcrossover(NeuralNetwork * nn, NeuralNetwork * father, NeuralNetwork * mo
 }
 
 void crossover(NeuralNetwork * nn, NeuralNetwork * father, NeuralNetwork * mother ){
-    int remainingToLocation = ((double) rand()/ (double) RAND_MAX )*(params.totalWeight - params.tailleCrossoverMax);
+    int remainingToLocation = ((double) rand_r(&seed)/ (double) RAND_MAX )*(params.totalWeight - params.tailleCrossoverMax);
     int crossoverRemaining = params.tailleCrossoverMax;
 
     Layer * layerA = father->firstLayer->nextLayer;
@@ -382,8 +387,8 @@ Population * newPopulation( ){
     population->secondPopulation = malloc(population->size * sizeof(NeuralNetwork)) ;
 
     for(size_t i = 0; i < population->size; i++){
-        population->firstPopulation[i] = newNeuralNetwork();
-        population->secondPopulation[i] = newNeuralNetwork();
+        population->firstPopulation[i] = newNeuralNetwork( i );
+        population->secondPopulation[i] = newNeuralNetwork( i );
     }
 
     return population;
@@ -391,33 +396,6 @@ Population * newPopulation( ){
 
 
 
-//
-// void calculateFitness(Population *population ){
-//     double sum = 0;
-//
-//     NeuralNetwork ** ListNeuralNetwork = population->firstPopulation;
-//
-//     for( size_t i = 0; i < population->size; i++)
-//         sum += ListNeuralNetwork[i]->score;
-//
-//     for( size_t i = 0; i < population->size; i++)
-//         ListNeuralNetwork[i]->fitness = ListNeuralNetwork[i]->score  / sum;
-// }
-//
-// void evolve(Population *population ){
-//
-//     NeuralNetwork * tmp;
-//     for( size_t i = 0; i < population->size; i++){
-//         tmp = population->secondPopulation[i];
-//
-//         crossover(tmp, pickOne(population), pickOne(population));
-//         mutate(tmp);
-//     }
-//     NeuralNetwork ** swap = population->firstPopulation;
-//     population->firstPopulation = population->secondPopulation;
-//     population->secondPopulation = swap;
-//     return;
-// }
 
 void swap(Population * population){
         NeuralNetwork ** swap = population->firstPopulation;
@@ -429,10 +407,14 @@ void swap(Population * population){
 NeuralNetwork * pickOne(Population *population ){
     size_t index = 0;
 
-    double r = (double) rand() / (double) RAND_MAX;
+    double r = (double) rand_r(&seed) / (double) RAND_MAX;
+    double rr = r;
+
     NeuralNetwork ** ListNeuralNetwork = population->firstPopulation;
 
     while ( r > 0) {
+        if(ListNeuralNetwork[index]->fitness <= 0)
+            printf("r : %lf rr: %lf index:%ld, fitt : %lf \n",r,rr,index, ListNeuralNetwork[index]->fitness );
         r -= ListNeuralNetwork[index]->fitness;
         index += 1;
     }
@@ -461,12 +443,21 @@ NeuralNetwork * bestElement(Population *population ){
 /////////////////                             Thread                                /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void boucle( int a ){
+
+    for(size_t i = 0; i < a; i++){}
+
+}
+
 Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
 
     Thread * thread = malloc(sizeof(Thread));
 
+    thread->count = 0;
+
     thread->id = id;
-    thread->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+    thread->numThread = numThread;
+    // thread->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
     thread->population = population;
 
     size_t tailleThread = params.tailleThread;
@@ -482,7 +473,9 @@ Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
     thread->fin = thread->debut + thread->size - 1;
 
     // printf("NT - début : %ld\n", thread->debut );
-    // printf("NT - fin : %ld\n\n", thread->fin );
+    // printf("NT - fin : %ld\n", thread->fin );
+    // printf("NT - size : %ld\n", thread->size );
+    // printf("NT - num : %ld\n\n", thread->numThread );
 
     thread->ListNeuralNetwork_A = malloc( thread->size * sizeof(Thread) );
     thread->ListNeuralNetwork_B = malloc( thread->size * sizeof(Thread) );
@@ -499,148 +492,114 @@ Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
     return thread;
 }
 
-//
+//Fonction que chaque thread fils va executer
 void *runFils(void *voidThread ){
 
     Thread * thread = (Thread *)voidThread;
-    for(size_t gen = 0; gen < 500; gen++){
 
-        // pthread_mutex_lock(&thread->mutex);
-        // printf("FILS - I START GAMING\n" );
-        // for(int k = 0; k < 100000000; k++){}
-        // printf("FILS - I FINISH GAMING\n" );
-        // thread->lock = 0;
-        // pthread_mutex_unlock(&thread->mutex);
-        while(thread->lock != 1){}
-        printf("FILS - I START GAMING\n" );
+    // printf("Thread %ld\n", thread->numThread);
+    // printf("%ld - thread - début : %ld\n",thread->numThread, thread->debut );
+    // printf("%ld - thread - fin : %ld\n\n",thread->numThread, thread->fin );
+    // printf("%ld - thread - siez : %ld\n\n",thread->numThread, thread->size );
+
+    for(size_t gen = 0; gen < params.generation; gen++){
+
+        //thread synchronisation pour la game
+        pthread_barrier_wait(&barrier1);
         for (size_t i = 0; i < thread->size; i++) {
             game(thread->ListNeuralNetwork_A[i]);
+            // boucle( 1000 );
         }
-        printf("FILS - I FINISH GAMING\n" );
-        thread->lock = 0;
 
-        while( ! thread->lock){}
-        printf("FILS - I START FITNESSING\n" );
+        //thread synchronisation pour le calcule de fitness
+        pthread_barrier_wait(&barrier2);
         calculateFitness(thread);
-        printf("FILS - I FINISH FITNESSING\n" );
-        thread->lock = 0;
+        // boucle( 1000 );
 
-        while( ! thread->lock){}
-        printf("FILS - I START EVOLVING\n" );
+        //thread synchronisation pour evolution
+        pthread_barrier_wait(&barrier3);
         evolve(thread);
-        printf("FILS - I FINISH EVOLVING\n" );
-        thread->lock = 0;
-
-
-
-        // printPopulaton(population);
-        // getchar();
-
-
-
-
+        // boucle( 1000 );
 
     }
-    // printf("Thread %d\n", thread);
-    // printf("thread - début : %ld\n", thread->debut );
-    // printf("thread - fin : %ld\n\n", thread->fin );
     return 0;
 }
 
+
+
+
+
+
+//runPere Lance l'ia celon les parametres de la structure params.
+//elle créer n threads fils puis les coordonne un certain nombre de génération
 void runPere(){
 
-    fileScore = openLog("log/fruit.csv");
+    //ouverture fichier de log
+    // fileScore = openLog("log/fruit.csv");
 
-
+    //création de la population
     Population * population = newPopulation(  );
-    //printNetwork(population->firstPopulation[0]);
+
+    //initialisation des barrières
+    //la barriere bloque les threads jusqu'à ce que 'params.nbThread + 1' soient bloqués
+    pthread_barrier_init(&barrier1, NULL, params.nbThread + 1);
+    pthread_barrier_init(&barrier2, NULL, params.nbThread + 1);
+    pthread_barrier_init(&barrier3, NULL, params.nbThread + 1);
+
+
+    // boucle de création et lancement des threads
 
     Thread ** threadList = malloc(params.nbThread * sizeof(Thread));
     pthread_t * idList = malloc(params.nbThread * sizeof(pthread_t));
 
-    //
     for( size_t i = 0; i < params.nbThread; i++){
         threadList[i] = NewThread(population, i, &idList[i] );
-        // printf("O -  %d\n", threadList[i] );
-        // printf("taille : %ld\n", threadList[i]->size );
-        // printf("début : %ld\n", threadList[i]->debut );
-        // printf("fin : %ld\n\n", threadList[i]->fin );
-        // pthread_mutex_lock(&threadList[i]->mutex);
+        // printf("Thread %ld\n", threadList[i]->numThread);
+        // printf("thread - début : %ld\n", threadList[i]->debut );
+        // printf("thread - fin : %ld\n",threadList[i]->fin );
+        // printf("thread - siez : %ld\n\n",threadList[i]->size );
         pthread_create(&idList[i], NULL, runFils, threadList[i] );
+        // getchar()
     }
 
     //
-    for(size_t g = 0; g < 500; g++){
-        printf("GEN : %ld\n", g );
+    for(size_t g = 0; g < params.generation; g++){
+        // printf("GEN : %ld\n", g );
 
-        // GAME
-        for( size_t i = 0; i < params.nbThread; i++){
-            // pthread_mutex_lock(&threadList[i]->mutex);
-            threadList[i]->lock = 1;
-            // pthread_mutex_unlock(&threadList[i]->mutex);
-        }
-
-        printf("PERE - j'attend la fin du gaming\n" );
-
-        for( size_t i = 0; i < params.nbThread; i++){
-            // pthread_mutex_lock(&threadList[i]->mutex);
-            while(threadList[i]->lock){}
-            // pthread_mutex_lock(&threadList[i]->mutex);
-        }
+        // GAME - resynchronise les threads
+        pthread_barrier_wait(&barrier1);
 
 
-        // FITNESS
-        for( size_t i = 0; i < params.nbThread; i++){
-            threadList[i]->lock = 1;
-        }
+        // FITNESS - resynchronise les threads
+        pthread_barrier_wait(&barrier2);
 
-        printf("PERE - j'attend la fin du calcul de fitness\n" );
+        // EVOLUTION - resynchronise les threads
+        pthread_barrier_wait(&barrier3);
 
-        for( size_t i = 0; i < params.nbThread; i++){
-            while(threadList[i]->lock){}
-        }
-
-        // EVOLUTION
-        for( size_t i = 0; i < params.nbThread; i++){
-            threadList[i]->lock = 1;
-        }
-
-        printf("PERE - j'attend la fin du calcul de l'evolution\n" );
-
-        for( size_t i = 0; i < params.nbThread; i++){
-            while(threadList[i]->lock){}
-        }
+        // printf("FIN GEN \n" );
 
 
-        printf("FIN GEN \n" );
+        // printf("gen :  %ld\n", g);
 
-        // for( size_t i = 0; i < params.nbThread; i++){
-        //     while(!run_thre)
-        //     pthread_mutex_lock(&threadList[i]->mutex);
-        // }
-        // waitRep(FinGamez)
-        //
-        // SendMsg(calculFitness)
-        // waitRep(FinCalculFitness)
-        //
-        // SendMessage(Evolvez)
-        // WaitRep(FinEvolvez)
-
-
-        // printf("gen :  %ld\n", i );
-        writeLogScore(fileScore, population);
-
+        //écrit les scores dans les logs
+        // writeLogScore(fileScore, population);
     }
 
-
+    //termine les threads
     for( size_t i = 0; i < params.nbThread; i++){
         pthread_join(idList[i], NULL );
-        printf("FIN THREAD %ld \n", i );
     }
 
+    // libération de la mémoire
+    for( size_t i = 0; i < params.nbThread; i++){
+        free(threadList[i]);
+    }
+
+    free(threadList);
+    free(idList);
 
     freePopulation( population );
-    closeLog(fileScore);
+    // closeLog(fileScore);
 
     return;
 }
@@ -653,8 +612,12 @@ void calculateFitness(Thread *thread ){
     for( size_t i = 0; i < thread->population->size; i++)
         sum += ListNeuralNetwork[i]->score;
 
-    for( size_t i = 0; i < thread->size; i++)
+    for( size_t i = 0; i < thread->size; i++){
         thread->ListNeuralNetwork_A[i]->fitness = thread->ListNeuralNetwork_A[i]->score  / sum;
+        if( thread->ListNeuralNetwork_A[i]->fitness != 0.001000)
+            printf("thread: %ld nn:%ld - fit %lf\n",thread->numThread, thread->ListNeuralNetwork_A[i]->numNN ,thread->ListNeuralNetwork_A[i]->fitness);
+    }
+
 }
 
 void evolve(Thread *thread ){
@@ -664,7 +627,7 @@ void evolve(Thread *thread ){
         // tmp = population->secondPopulation[i];
         tmp = thread->ListNeuralNetwork_B[i];
 
-        crossover(tmp, pickOne(thread->population), pickOne(thread->population));
+        // crossover(tmp, pickOne(thread->population), pickOne(thread->population));
         mutate(tmp);
     }
 
@@ -681,8 +644,25 @@ void evolve(Thread *thread ){
 /////////////////                              Game                                 /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 void game(NeuralNetwork * nn){
+    // printf("%ld game\n", nn->numNN);
+    double * tableau = malloc(8 * sizeof(double)); /* déclare un tableau de 10 entiers */
+
+    for (int i = 0; i < 8; i++) /* boucle << classique >> pour le parcours d'un tableau */
+    {
+        tableau[i] = 0;  /* chaque case du tableau reçoit son indice comme valeur */
+    }
+
+    for (int i = 0; i < 10; i++)
+        computeNN( nn, tableau );
+
+
+    free(tableau);
+    setScore(nn, 10, 10);
+}
+
+
+void gameNul(NeuralNetwork * nn){
 
     Snake * snake ;
 
@@ -695,7 +675,7 @@ void game(NeuralNetwork * nn){
 
     //
     while (end == 0 && snake->health != 0) {
-        resultat = compute( nn, getInput(snake, params.nbNeuronsInput) );
+        resultat = computeNN( nn, getInput(snake, params.nbNeuronsInput) );
 
         //                      Affichage
         // jump(10);
@@ -873,7 +853,7 @@ FILE* openLog( char *fileName ){
         //printf("%ld\n", ftell(file) );
 
         if( ftell(file) != 0 ){
-            printf("le fichier n'est pas vide !\n" );
+            // printf("le fichier n'est pas vide !\n" );
             //fclose( file );
             //exit(1);
         }

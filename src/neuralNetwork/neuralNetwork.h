@@ -12,6 +12,7 @@
 
     typedef struct Config{
         size_t taille_population;
+        size_t generation;
 
         size_t nbNeuronsInput;
         size_t nbNeuronsHidden;
@@ -52,6 +53,7 @@
         double fitness;
 
         size_t size;
+        size_t numNN;
         struct Layer * firstLayer;
         struct Layer * lastLayer;
 
@@ -64,6 +66,7 @@
     {
 
         size_t size;
+
         /*
         struct NeuralNetwork ***current;
         struct NeuralNetwork ***old;
@@ -82,12 +85,14 @@
         Population * population;
 
         pthread_t * id;
-        short lock;
-        pthread_mutex_t mutex;
+        // short lock;
+        // pthread_mutex_t mutex;
 
+        size_t numThread;
         size_t size;
         size_t debut;
         size_t fin;
+        int count;
 
         NeuralNetwork ** ListNeuralNetwork_A;
         NeuralNetwork ** ListNeuralNetwork_B;
@@ -98,6 +103,12 @@
 
 
     Config params;
+    unsigned int  seed;
+
+
+    pthread_barrier_t barrier1;
+    pthread_barrier_t barrier2;
+    pthread_barrier_t barrier3;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                              Other                                /////////////////
@@ -109,6 +120,7 @@
 
     Config NewConfig(
         size_t taille_population,
+        size_t generation,
 
         size_t nbNeuronsInput,
         size_t nbNeuronsHidden,
@@ -139,9 +151,9 @@
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                          NeuralNetwork                            /////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    NeuralNetwork * newNeuralNetwork();
+    NeuralNetwork * newNeuralNetwork( size_t numNN );
 
-    size_t compute(NeuralNetwork * nn, double * inputList );
+    size_t computeNN(NeuralNetwork * nn, double * inputList );
 
     size_t output(NeuralNetwork * nn );
 
@@ -176,6 +188,9 @@
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                             Thread                                /////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
+    void boucle( int a );
+
+
     Thread * NewThread(Population *population, size_t numThread, pthread_t * id);
 
     void *runFils(void *voidThread );
