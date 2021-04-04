@@ -28,22 +28,18 @@
         double nbFruit;
         double health ;
 
-        struct Fruit * fruit;
+        ValeurGrille grille[NB_LIG][NB_COL];
+
+        int ligneFruit;
+        int colonneFruit;
+
         struct Body * head;
         struct Body * queue;
     } Snake;
+    unsigned int  seed;
 
-    typedef struct Fruit
-    {
-        int ligne;
-        int colonne;
-
-    } Fruit;
-
-    ValeurGrille grille[NB_LIG][NB_COL];
-
-    void initialiseGrille();
-    void afficheGrille();
+    void initialiseGrille(Snake * snake);
+    void afficheGrille(Snake * snake);
     void initSnake(Snake * snake );
     int generateFruit(Snake * snake );
     void deleteQueue(Snake * snake );

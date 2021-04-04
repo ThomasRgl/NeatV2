@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+
 #include "../snake/snake.h"
 #include "neuralNetwork.h"
 
@@ -130,7 +131,7 @@ void setInput(Layer * layer, double * inputList){
     for(size_t i = 0; i < params.nbNeuronsInput; i++){
         layer->neurons[i] = sigmoid(inputList[i]);
     }
-    // free(inputList);
+    free(inputList);
 }
 
 //
@@ -371,6 +372,61 @@ void setScore(NeuralNetwork * nn, double score,  double fruit){
 }
 
 
+void playBest( NeuralNetwork * nn){
+    // printf("aaaaaa\n" );
+    Snake * snake ;
+
+    int resultat = 4;
+    int end = 0;
+
+
+    snake = malloc(sizeof(Snake));
+    initSnake(snake);
+
+    //
+    while (end == 0 && snake->health != 0) {
+        resultat = computeNN( nn, getInput(snake, params.nbNeuronsInput) );
+
+        //                      Affichage
+        jump(10);
+        // printNetwork(nn);
+        // afficherData(nn);
+        printNetwork(nn);
+        afficherJeu(resultat, snake);
+        printf(">\n");
+        getchar();
+
+        switch (resultat) {
+            case 0:
+                end = move(snake, -1, 0);
+                break;
+            case 1:
+                end = move(snake, 1, 0);
+                break;
+            case 2:
+                end = move(snake, 0, -1);
+                break;
+            case 3:
+                end = move(snake, 0, 1);
+                break;
+            default:
+                //break;
+                //printf("fin du jeu\n" );
+                printf("%d\n", resultat );
+                exit(0);
+                end = 1;
+                break;
+        }
+
+    }
+
+    destroySnake(snake);
+
+    return;
+}
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                           population                              /////////////////
@@ -522,6 +578,7 @@ void *runFils(void *voidThread ){
         // boucle( 1000 );
 
     }
+
     return 0;
 }
 
@@ -535,7 +592,7 @@ void *runFils(void *voidThread ){
 void runPere(){
 
     //ouverture fichier de log
-    // fileScore = openLog("log/fruit.csv");
+    fileScore = openLog("log/fruit.csv");
 
     //création de la population
     Population * population = newPopulation(  );
@@ -554,10 +611,6 @@ void runPere(){
 
     for( size_t i = 0; i < params.nbThread; i++){
         threadList[i] = NewThread(population, i, &idList[i] );
-        // printf("Thread %ld\n", threadList[i]->numThread);
-        // printf("thread - début : %ld\n", threadList[i]->debut );
-        // printf("thread - fin : %ld\n",threadList[i]->fin );
-        // printf("thread - siez : %ld\n\n",threadList[i]->size );
         pthread_create(&idList[i], NULL, runFils, threadList[i] );
         // getchar()
     }
@@ -579,10 +632,13 @@ void runPere(){
         // printf("FIN GEN \n" );
 
 
-        // printf("gen :  %ld\n", g);
+        printf("gen :  %ld\n", g);
 
         //écrit les scores dans les logs
-        // writeLogScore(fileScore, population);
+        writeLogScore(fileScore, population);
+        if( g%500 == 0){
+            playBest(bestElement(population ));
+        }
     }
 
     //termine les threads
@@ -592,6 +648,8 @@ void runPere(){
 
     // libération de la mémoire
     for( size_t i = 0; i < params.nbThread; i++){
+        free(threadList[i]->ListNeuralNetwork_A);
+        free(threadList[i]->ListNeuralNetwork_B);
         free(threadList[i]);
     }
 
@@ -599,7 +657,7 @@ void runPere(){
     free(idList);
 
     freePopulation( population );
-    // closeLog(fileScore);
+    closeLog(fileScore);
 
     return;
 }
@@ -614,8 +672,7 @@ void calculateFitness(Thread *thread ){
 
     for( size_t i = 0; i < thread->size; i++){
         thread->ListNeuralNetwork_A[i]->fitness = thread->ListNeuralNetwork_A[i]->score  / sum;
-        if( thread->ListNeuralNetwork_A[i]->fitness != 0.001000)
-            printf("thread: %ld nn:%ld - fit %lf\n",thread->numThread, thread->ListNeuralNetwork_A[i]->numNN ,thread->ListNeuralNetwork_A[i]->fitness);
+
     }
 
 }
@@ -627,7 +684,7 @@ void evolve(Thread *thread ){
         // tmp = population->secondPopulation[i];
         tmp = thread->ListNeuralNetwork_B[i];
 
-        // crossover(tmp, pickOne(thread->population), pickOne(thread->population));
+        crossover(tmp, pickOne(thread->population), pickOne(thread->population));
         mutate(tmp);
     }
 
@@ -644,7 +701,7 @@ void evolve(Thread *thread ){
 /////////////////                              Game                                 /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void game(NeuralNetwork * nn){
+void gameOld(NeuralNetwork * nn){
     // printf("%ld game\n", nn->numNN);
     double * tableau = malloc(8 * sizeof(double)); /* déclare un tableau de 10 entiers */
 
@@ -662,16 +719,14 @@ void game(NeuralNetwork * nn){
 }
 
 
-void gameNul(NeuralNetwork * nn){
+void game(NeuralNetwork * nn){
 
     Snake * snake ;
+    snake = malloc(sizeof(Snake));
+    initSnake(snake);
 
     int resultat = 4;
     int end = 0;
-
-    initialiseGrille();
-    snake = malloc(sizeof(Snake));
-    initSnake(snake);
 
     //
     while (end == 0 && snake->health != 0) {
@@ -773,6 +828,7 @@ void printNetwork(NeuralNetwork *nn ){
     // }
 
 }
+
 void printPopulaton(Population *population ){
     printf("//////////////////////////////////////////////\n" );
     printf("///////             SECOND            ////////\n" );
@@ -789,6 +845,32 @@ void printPopulaton(Population *population ){
         printNetwork( population->firstPopulation[i]);
     }
 
+}
+
+void jump(int a){
+    for( int i = 0; i < a; i++){
+        printf("\n");
+    }
+}
+
+void afficherJeu(int resultat, Snake * snake ){
+    afficheGrille( snake );
+    switch (resultat) {
+        case 0:
+            printf(">haut\n" );
+            break;
+        case 1:
+            printf(">Bas\n" );
+            break;
+        case 2:
+            printf(">gauche\n" );
+            break;
+        case 3:
+            printf(">droite\n" );
+            break;
+        default:
+            break;
+        }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////

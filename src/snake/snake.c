@@ -62,22 +62,22 @@ double * getInput( Snake * snake, int nbInput) {
     inputList[2] = -10 ; //Danger droite
     inputList[3] = -10 ; //Danger gauche
 
-    if( !(ligneHead-1 >= 0) || grille[ligneHead-1][colonneHead] == SNAKE  )
+    if( !(ligneHead-1 >= 0) || snake->grille[ligneHead-1][colonneHead] == SNAKE  )
         inputList[0] = 10;
 
-    if( !(ligneHead+1 < NB_LIG) || grille[ligneHead+1][colonneHead] == SNAKE  )
+    if( !(ligneHead+1 < NB_LIG) || snake->grille[ligneHead+1][colonneHead] == SNAKE  )
         inputList[1] = 10;
 
-    if( !(colonneHead+1 < NB_COL) || grille[ligneHead][colonneHead+1] == SNAKE  )
+    if( !(colonneHead+1 < NB_COL) || snake->grille[ligneHead][colonneHead+1] == SNAKE  )
         inputList[2] = 10;
 
-    if( !(colonneHead-1 >= 0)  || grille[ligneHead][colonneHead-1] == SNAKE  )
+    if( !(colonneHead-1 >= 0)  || snake->grille[ligneHead][colonneHead-1] == SNAKE  )
         inputList[3] = 10;
 
 
     //
-    int ligneFruit = snake->fruit->ligne;
-    int colonneFruit = snake->fruit->colonne;
+    int ligneFruit = snake->ligneFruit;
+    int colonneFruit = snake->colonneFruit;
 
     inputList[4] = -10 ; //fruit haut
     inputList[5] = -10 ; //fruit bas
@@ -298,25 +298,25 @@ double * getInput( Snake * snake, int nbInput) {
 /*
  * Initiliase la grille du morpion a vide
  */
-void initialiseGrille() {
-  int i, j;
-  for (i=0; i<NB_LIG; i++) {
-    for (j=0; j<NB_COL; j++) {
-      grille[i][j] = VIDE;
+void initialiseGrille(Snake * snake) {
+    int i, j;
+    for (i=0; i<NB_LIG; i++) {
+        for (j=0; j<NB_COL; j++) {
+            snake->grille[i][j] = VIDE;
+        }
     }
-  }
 }
 
 /*
   Affiche la grille du morpion
   _ indique case vide, O pion joueur 1 et X pion jour 2
  */
-void afficheGrille() {
+void afficheGrille( Snake * snake) {
     int i, j;
     //printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" );
     for (i=0; i<NB_LIG; i++) {
         for (j=0; j<NB_COL; j++) {
-            switch (grille[i][j]) {
+            switch (snake->grille[i][j]) {
                 case VIDE:
                     printf("_");
                     break;
@@ -336,7 +336,10 @@ void afficheGrille() {
 void initSnake( Snake * snake){
     /*snake->head = NULL;
     snake->queue = NULL;*/
+    initialiseGrille( snake);
+
     snake->length = 0;
+
     snake->head = NULL;
     snake->queue = NULL;
 
@@ -344,12 +347,14 @@ void initSnake( Snake * snake){
     snake->queue = snake->head;
     addHead( snake, 0, 1);
 
-    snake->fruit = malloc(sizeof(Fruit));
+    // snake->fruit = malloc(sizeof(Fruit));
     generateFruit(snake);
 
     snake->score = 1;
     snake->nbFruit = 0;
     snake->health = 100;
+
+
 }
 
 //
@@ -360,7 +365,7 @@ int generateFruit(Snake * snake){
 
     for(int l = 0; l < NB_LIG; l++ ){
         for(int c = 0; c < NB_COL; c++ ){
-            if( grille[l][c] == VIDE ){
+            if( snake->grille[l][c] == VIDE ){
                 tab[taille] = l * NB_COL + c;
                 taille++;
             }
@@ -370,13 +375,13 @@ int generateFruit(Snake * snake){
         return 1;
     }
 
-    int index = rand()%taille;
+    int index = rand_r(&seed)%taille;
     index = tab[index];
 
-    snake->fruit->ligne = index/NB_LIG;
-    snake->fruit->colonne = index%NB_COL;
+    snake->ligneFruit = index/NB_LIG;
+    snake->colonneFruit = index%NB_COL;
 
-    grille[snake->fruit->ligne][snake->fruit->colonne] = FRUIT;
+    snake->grille[snake->ligneFruit][snake->colonneFruit] = FRUIT;
     return 0;
 
     // int ligne, colonne;
@@ -398,7 +403,7 @@ void deleteQueue(Snake * snake){
     if(! old || !old->next)
         return;
     snake->queue = old->next;
-    grille[old->ligne][old->colonne] = VIDE;
+    snake->grille[old->ligne][old->colonne] = VIDE;
 
     old->next->previous = NULL;
     old->next = NULL;
@@ -424,7 +429,7 @@ void addHead(Snake * snake, int ligne, int colonne){
     //
     new->ligne = ligne;
     new->colonne = colonne;
-    grille[ligne][colonne] = SNAKE;
+    snake->grille[ligne][colonne] = SNAKE;
 
     snake->length += 1;
 
@@ -437,9 +442,9 @@ int move(Snake * snake, int i, int j){
         //printf("tu sorts du cadre\n" );
         return 1;}
 
-    ValeurGrille val = grille[snake->head->ligne + i ][snake->head->colonne + j];
+    ValeurGrille val = snake->grille[snake->head->ligne + i ][snake->head->colonne + j];
 
-    if( val == SNAKE){;
+    if( val == SNAKE){
         //printf("tu as touché le serpent\n" );
         return 1;}
 
@@ -478,7 +483,6 @@ void destroySnake( Snake * snake ){
         body = bodyTemp;
     }
 
-    free(snake->fruit);
     free(snake);
 }
 

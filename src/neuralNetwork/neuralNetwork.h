@@ -1,3 +1,5 @@
+#include "../snake/snake.h"
+
 #ifndef NN_H
     #define NN_H
 
@@ -163,6 +165,8 @@
 
     void setScore(NeuralNetwork * nn, double score,  double fruit);
 
+    void playBest( NeuralNetwork * nn);
+
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -215,6 +219,10 @@
     void printNetwork(NeuralNetwork *nn );
 
     void printPopulaton(Population *population );
+
+    void afficherJeu(int resultat, Snake * snake );
+
+    void jump(int a);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////                       garbage collector                           /////////////////
