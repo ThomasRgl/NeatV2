@@ -14,22 +14,47 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                              Other                                /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
+Fonction d'activation
+*/
 double sigmoid(double x){
     return 1 / (1 + exp(-(x)) ); //default sigmoid
 }
 
+/*
+générateur aléatoire entre 0 et 1
+*/
 double rand_gen(){
     return ( (double)(rand_r(&seed)) + 1. )/( (double)(RAND_MAX) + 1. );
 }
 
+/*
+générateur aléatoire suivant une loi normale
+*/
 double normalRandom(){
     double v1=rand_gen();
     double v2=rand_gen();
     return cos(2*3.14*v2)*sqrt(-2.*log(v1));
 }
 
+/*
+fonction de configuration de la variable globale params
+@params size_t taille_population : Taille de la Population
+@params size_t generation : nombre de génération
 
+@params size_t nbNeuronsInput : nombre de neurones dans l'input layer
+@params size_t nbNeuronsHidden : nombre de neurones dans l'hidden layer
+@params size_t nbNeuronsOutput : nombre de neurones dans l'output layer
+
+@params size_t nbHiddenLayer : nombre de hidden layer
+
+@params double mutationRate : probabilité de mutation de chaque poid
+@params double sigmaMutation :
+@params double crossoverRate : part de l'individu pere qui sera concervé dans l'individu fils
+
+@params size_t nbThread : nombre de thread que le programme va utiliser
+
+*/
 Config NewConfig(
     size_t taille_population,
     size_t generation,
@@ -82,7 +107,14 @@ Config NewConfig(
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                              Layer                                /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+Initiliase un layer
+@param size_t size : taille du layer à creer
+@param Layer * previousLayer : pointeur sur le layer à créer
 
+@return le nouveau layer
+
+*/
 Layer * newLayer(size_t size, Layer * previousLayer){
     Layer * new = malloc(sizeof(Layer));
 
@@ -116,6 +148,11 @@ Layer * newLayer(size_t size, Layer * previousLayer){
     return new;
 }
 
+/*
+Initiliase tout les poids d'un layer aléatoirement entre -1 et 1
+@param Layer * layer: le layer à initialiser
+@param size_t previousSize; la taille du précédent layer
+*/
 void initWeigth(Layer * layer, size_t previousSize){
     for(size_t i = 0; i < layer->size; i++){
         layer->bias[i] = 1 - ((double)rand_r(&seed) / (double)RAND_MAX)*2 ;
@@ -126,7 +163,12 @@ void initWeigth(Layer * layer, size_t previousSize){
     }
 
 }
-//
+
+/*
+Initiliase la valeur des neurones d'un layer avec une liste d'input
+@param Layer * layer
+@param double * inputList : La liste d'input
+*/
 void setInput(Layer * layer, double * inputList){
     for(size_t i = 0; i < params.nbNeuronsInput; i++){
         layer->neurons[i] = sigmoid(inputList[i]);
@@ -134,7 +176,10 @@ void setInput(Layer * layer, double * inputList){
     free(inputList);
 }
 
-//
+
+/*
+Lance le calcul du réseau de neurone sur un layer
+*/
 void computeLayer(Layer * layer){
     double s = 0;
 
@@ -154,7 +199,9 @@ void computeLayer(Layer * layer){
     }
 }
 
-//
+/*
+Mute tout les poids et les biais dun layer
+*/
 void mutateLayer(Layer * layer){
 
     size_t previousSize = layer->previousLayer->size;
@@ -173,6 +220,11 @@ void mutateLayer(Layer * layer){
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                          NeuralNetwork                            /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+Créé un neural network
+@param size_t numNN : id du neural network
+*/
 NeuralNetwork * newNeuralNetwork( size_t numNN ) {
 
     //
@@ -212,7 +264,12 @@ NeuralNetwork * newNeuralNetwork( size_t numNN ) {
 
 }
 
-//
+/*
+Lance le calcule sur tout le neural Network
+@param double * inputList : Liste d'input
+
+@return l'indice du neurone ouput le plus grand
+*/
 size_t computeNN(NeuralNetwork * nn, double * inputList ){
 
     //
@@ -224,12 +281,14 @@ size_t computeNN(NeuralNetwork * nn, double * inputList ){
     //
     while(layer){
         computeLayer(layer);
-        // boucle(1000);
         layer = layer->nextLayer;
     }
     return output( nn );
 }
 
+/*
+@return l'indice du neurone ouput le plus grand
+*/
 size_t output(NeuralNetwork * nn ){
     Layer * layer = nn->lastLayer;
 
@@ -244,77 +303,16 @@ size_t output(NeuralNetwork * nn ){
             index = i;
         }
     }
-    // printf("size output %ld\n", layer->size );
-    // printf("max output %ld\n", index );
     return index;
 
 }
-//
-void Oldcrossover(NeuralNetwork * nn, NeuralNetwork * father, NeuralNetwork * mother ){
 
-    size_t tot = 0;
-
-    // //
-    // Layer * layer = nn->firstLayer->nextLayer;
-    // while(layer){
-    //     tot += layer->size * (layer->previousLayer->size + 1);
-    //     layer = layer->nextLayer;
-    // }
-    Layer * layer;
-
-    size_t cut = (tot * params.tailleCrossoverMax);
-    size_t remains = tot - cut;
-
-    size_t nweights;
-    size_t nbias;
-
-    //
-    layer = nn->firstLayer->nextLayer;
-    Layer * fatherLayer = father->firstLayer->nextLayer;
-
-
-    while (cut != 0)
-    {
-
-        nweights = layer->size * layer->previousLayer->size;
-        nbias = layer->size;
-
-        for (size_t i = 0; i < nweights && cut != 0; i++) {
-            layer->weights[i] = fatherLayer->weights[i];
-            cut--;
-        }
-
-        for (size_t i = 0; i < nbias && cut != 0; i++) {
-            layer->bias[i] = fatherLayer->bias[i];
-            cut--;
-        }
-        fatherLayer = fatherLayer->nextLayer;
-        layer = layer->nextLayer;
-    }
-
-    //
-    layer = nn->lastLayer;
-    Layer * motherLayer = mother->lastLayer;
-    while (remains != 0)
-    {
-        nweights = layer->size * layer->previousLayer->size ;
-        nbias = layer->size;
-        for (size_t i = nbias - 1; i != 0 && remains != 0; i--) {
-            layer->bias[i] = motherLayer->bias[i];
-            remains--;
-        }
-
-        for (size_t i = nweights - 1; i != 0 && remains != 0; i--) {
-            layer->weights[i] = motherLayer->weights[i];
-            remains--;
-        }
-
-        motherLayer = motherLayer->previousLayer;
-        layer = layer->previousLayer;
-    }
-
-}
-
+/*
+Effectue un croisement entre un neural network pere et neural network mere
+@param NeuralNetwork * nn : nn fils
+@param NeuralNetwork * father : nn pere
+@param NeuralNetwork * mother : nn mere
+*/
 void crossover(NeuralNetwork * nn, NeuralNetwork * father, NeuralNetwork * mother ){
     int remainingToLocation = ((double) rand_r(&seed)/ (double) RAND_MAX )*(params.totalWeight - params.tailleCrossoverMax);
     int crossoverRemaining = params.tailleCrossoverMax;
@@ -354,6 +352,9 @@ void crossover(NeuralNetwork * nn, NeuralNetwork * father, NeuralNetwork * mothe
 
 }
 
+/*
+Lance la mutation sur un neural network
+*/
 void mutate(NeuralNetwork * nn ){
     Layer * layer = nn->firstLayer->nextLayer;
 
@@ -364,6 +365,11 @@ void mutate(NeuralNetwork * nn ){
     }
 }
 
+/*
+Donne un score au neural network en fonction de sa performance sur le jeu
+@param double score : score du jeu controlé par le neural network
+@param double fruit :
+*/
 void setScore(NeuralNetwork * nn, double score,  double fruit){
     nn->score = score*score;
     // nn->score = exp(score);
@@ -372,67 +378,15 @@ void setScore(NeuralNetwork * nn, double score,  double fruit){
 }
 
 
-void playBest( NeuralNetwork * nn){
-    // printf("aaaaaa\n" );
-    Snake * snake ;
-
-    int resultat = 4;
-    int end = 0;
-
-
-    snake = malloc(sizeof(Snake));
-    initSnake(snake);
-
-    //
-    while (end == 0 && snake->health != 0) {
-        resultat = computeNN( nn, getInput(snake, params.nbNeuronsInput) );
-
-        //                      Affichage
-        jump(10);
-        // printNetwork(nn);
-        // afficherData(nn);
-        printNetwork(nn);
-        afficherJeu(resultat, snake);
-        printf(">\n");
-        getchar();
-
-        switch (resultat) {
-            case 0:
-                end = move(snake, -1, 0);
-                break;
-            case 1:
-                end = move(snake, 1, 0);
-                break;
-            case 2:
-                end = move(snake, 0, -1);
-                break;
-            case 3:
-                end = move(snake, 0, 1);
-                break;
-            default:
-                //break;
-                //printf("fin du jeu\n" );
-                printf("%d\n", resultat );
-                exit(0);
-                end = 1;
-                break;
-        }
-
-    }
-
-    destroySnake(snake);
-
-    return;
-}
-
-
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                           population                              /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//
+/*
+Créé une nouvelle population
+@return la nouvelle population
+*/
 Population * newPopulation( ){
     Population * population;
     population = malloc( sizeof(Population) );
@@ -452,14 +406,21 @@ Population * newPopulation( ){
 
 
 
-
+/*
+Echange les pointeurs de la liste courante et précédente de neural network
+*/
 void swap(Population * population){
         NeuralNetwork ** swap = population->firstPopulation;
         population->firstPopulation = population->secondPopulation;
         population->secondPopulation = swap;
 }
 
+/*
+Sélectionne aléatoirement un individu de la population en fonction de sa fitness
+méthode à optimiser ASAP
 
+@return un individu de la population
+*/
 NeuralNetwork * pickOne(Population *population ){
     size_t index = 0;
 
@@ -481,6 +442,10 @@ NeuralNetwork * pickOne(Population *population ){
     return ListNeuralNetwork[index - 1];
 }
 
+/*
+sélectionne l'individu avec le meilleur score
+@return le meilleur individu de la population
+*/
 NeuralNetwork * bestElement(Population *population ){
     double BestScore = 0;
     size_t  index = 0;
@@ -499,12 +464,12 @@ NeuralNetwork * bestElement(Population *population ){
 /////////////////                             Thread                                /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void boucle( int a ){
-
-    for(size_t i = 0; i < a; i++){}
-
-}
-
+/*
+Créé une structure Thread
+@param Population *population : la population
+@param size_t numThread : numéro du thread
+@param pthread_t * id : id pthread
+*/
 Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
 
     Thread * thread = malloc(sizeof(Thread));
@@ -513,7 +478,6 @@ Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
 
     thread->id = id;
     thread->numThread = numThread;
-    // thread->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
     thread->population = population;
 
     size_t tailleThread = params.tailleThread;
@@ -527,11 +491,6 @@ Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
     thread->size = tailleThread;
     thread->debut = numThread * params.tailleThread;
     thread->fin = thread->debut + thread->size - 1;
-
-    // printf("NT - début : %ld\n", thread->debut );
-    // printf("NT - fin : %ld\n", thread->fin );
-    // printf("NT - size : %ld\n", thread->size );
-    // printf("NT - num : %ld\n\n", thread->numThread );
 
     thread->ListNeuralNetwork_A = malloc( thread->size * sizeof(Thread) );
     thread->ListNeuralNetwork_B = malloc( thread->size * sizeof(Thread) );
@@ -548,15 +507,13 @@ Thread * NewThread(Population *population, size_t numThread, pthread_t * id){
     return thread;
 }
 
-//Fonction que chaque thread fils va executer
+
+/*
+Fonction que chaque thread fils va executer
+*/
 void *runFils(void *voidThread ){
 
     Thread * thread = (Thread *)voidThread;
-
-    // printf("Thread %ld\n", thread->numThread);
-    // printf("%ld - thread - début : %ld\n",thread->numThread, thread->debut );
-    // printf("%ld - thread - fin : %ld\n\n",thread->numThread, thread->fin );
-    // printf("%ld - thread - siez : %ld\n\n",thread->numThread, thread->size );
 
     for(size_t gen = 0; gen < params.generation; gen++){
 
@@ -564,18 +521,15 @@ void *runFils(void *voidThread ){
         pthread_barrier_wait(&barrier1);
         for (size_t i = 0; i < thread->size; i++) {
             game(thread->ListNeuralNetwork_A[i]);
-            // boucle( 1000 );
         }
 
         //thread synchronisation pour le calcule de fitness
         pthread_barrier_wait(&barrier2);
         calculateFitness(thread);
-        // boucle( 1000 );
 
         //thread synchronisation pour evolution
         pthread_barrier_wait(&barrier3);
         evolve(thread);
-        // boucle( 1000 );
 
     }
 
@@ -587,8 +541,11 @@ void *runFils(void *voidThread ){
 
 
 
-//runPere Lance l'ia celon les parametres de la structure params.
-//elle créer n threads fils puis les coordonne un certain nombre de génération
+
+/*
+Fonction executée par le thread père
+elle créer n threads fils puis les coordonne un certain nombre de génération
+*/
 void runPere(){
 
     //ouverture fichier de log
@@ -662,6 +619,9 @@ void runPere(){
     return;
 }
 
+/*
+Calcule la fitness de chaque element du thread
+*/
 void calculateFitness(Thread *thread ){
     double sum = 0;
 
@@ -677,6 +637,9 @@ void calculateFitness(Thread *thread ){
 
 }
 
+/*
+Lance l'évolution pour tout les éléments du thread
+*/
 void evolve(Thread *thread ){
 
     NeuralNetwork * tmp;
@@ -701,24 +664,10 @@ void evolve(Thread *thread ){
 /////////////////                              Game                                 /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void gameOld(NeuralNetwork * nn){
-    // printf("%ld game\n", nn->numNN);
-    double * tableau = malloc(8 * sizeof(double)); /* déclare un tableau de 10 entiers */
-
-    for (int i = 0; i < 8; i++) /* boucle << classique >> pour le parcours d'un tableau */
-    {
-        tableau[i] = 0;  /* chaque case du tableau reçoit son indice comme valeur */
-    }
-
-    for (int i = 0; i < 10; i++)
-        computeNN( nn, tableau );
-
-
-    free(tableau);
-    setScore(nn, 10, 10);
-}
-
-
+/*
+Fonction jeu qui sera controllé par un nn
+@param NeuralNetwork * nn : nn controllant le jeu
+*/
 void game(NeuralNetwork * nn){
 
     Snake * snake ;
@@ -770,11 +719,72 @@ void game(NeuralNetwork * nn){
     return;
 }
 
+/*
+Joue le meileur élément de la population
+*/
+void playBest( NeuralNetwork * nn){
+    // printf("aaaaaa\n" );
+    Snake * snake ;
+
+    int resultat = 4;
+    int end = 0;
+
+
+    snake = malloc(sizeof(Snake));
+    initSnake(snake);
+
+    //
+    while (end == 0 && snake->health != 0) {
+        resultat = computeNN( nn, getInput(snake, params.nbNeuronsInput) );
+
+        //                      Affichage
+        jump(10);
+        // printNetwork(nn);
+        // afficherData(nn);
+        printNetwork(nn);
+        afficherJeu(resultat, snake);
+        printf(">\n");
+        getchar();
+
+        switch (resultat) {
+            case 0:
+                end = move(snake, -1, 0);
+                break;
+            case 1:
+                end = move(snake, 1, 0);
+                break;
+            case 2:
+                end = move(snake, 0, -1);
+                break;
+            case 3:
+                end = move(snake, 0, 1);
+                break;
+            default:
+                //break;
+                //printf("fin du jeu\n" );
+                printf("%d\n", resultat );
+                exit(0);
+                end = 1;
+                break;
+        }
+
+    }
+
+    destroySnake(snake);
+
+    return;
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////                            Affichage                              /////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
+Affiche le NN
+@param NeuralNetwork *nn : nn à afficher
+*/
 void printNetwork(NeuralNetwork *nn ){
 
 
@@ -829,6 +839,10 @@ void printNetwork(NeuralNetwork *nn ){
 
 }
 
+/*
+Affiche la population
+@param Population *population : population à afficher
+*/
 void printPopulaton(Population *population ){
     printf("//////////////////////////////////////////////\n" );
     printf("///////             SECOND            ////////\n" );
@@ -853,6 +867,11 @@ void jump(int a){
     }
 }
 
+/*
+Affiche le jeu
+@param int resultat :
+@param Snake * snake :
+*/
 void afficherJeu(int resultat, Snake * snake ){
     afficheGrille( snake );
     switch (resultat) {

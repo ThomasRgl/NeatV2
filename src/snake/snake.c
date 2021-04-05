@@ -51,7 +51,7 @@ double * getInput( Snake * snake, int nbInput) {
     //
     // return inputList;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            //                                            input v2 : 8 input
+    //                                            input v2 : 8 input
     double * inputList = malloc(nbInput * sizeof(double)) ;
 
     int ligneHead = snake->head->ligne;
@@ -126,7 +126,7 @@ double * getInput( Snake * snake, int nbInput) {
     //
     // return inputList;
 
-    //                                                     input v4 : 8 input
+    //                                                     input v4 : 16 input
     // double * inputList = malloc(nbInput * sizeof(double)) ;
     //
     // //
@@ -134,8 +134,8 @@ double * getInput( Snake * snake, int nbInput) {
     // int colonneHead = snake->head->colonne;
     //
     // //
-    // int ligneFruit = snake->fruit->ligne;
-    // int colonneFruit = snake->fruit->colonne;
+    // int ligneFruit = snake->ligneFruit;
+    // int colonneFruit = snake->ligneFruit;
     //
     // //
     // int index = 0;
@@ -232,7 +232,7 @@ double * getInput( Snake * snake, int nbInput) {
     // //                          SAFE ZONE
     // //HAUT
     // index = 1;
-    // while( (ligneHead - index) >= 0 && grille[ligneHead - index][colonneHead] != SNAKE ){
+    // while( (ligneHead - index) >= 0 && snake->grille[ligneHead - index][colonneHead] != SNAKE ){
     //     index+=1;
     // }
     // inputList[9] = (index-1)*2 -10 ;
@@ -240,7 +240,7 @@ double * getInput( Snake * snake, int nbInput) {
     //
     // //BAS
     // index = 1;
-    // while( (ligneHead + index) < NB_LIG && grille[ligneHead + index][colonneHead] != SNAKE ){
+    // while( (ligneHead + index) < NB_LIG && snake->grille[ligneHead + index][colonneHead] != SNAKE ){
     //     index+=1;
     // }
     // inputList[10] =  (index-1)*2 -10 ;
@@ -248,7 +248,7 @@ double * getInput( Snake * snake, int nbInput) {
     //
     // //DROITE
     // index = 1;
-    // while( (colonneHead + index) < NB_COL && grille[ligneHead][colonneHead + index] != SNAKE ){
+    // while( (colonneHead + index) < NB_COL && snake->grille[ligneHead][colonneHead + index] != SNAKE ){
     //     index+=1;
     // }
     // inputList[11] =  (index-1)*2 -10 ;
@@ -256,15 +256,15 @@ double * getInput( Snake * snake, int nbInput) {
     //
     // //GAUCHE
     // index = 1;
-    // while( (colonneHead - index) >= 0 && grille[ligneHead][colonneHead - index] != SNAKE ){
+    // while( (colonneHead - index) >= 0 && snake->grille[ligneHead][colonneHead - index] != SNAKE ){
     //     index+=1;
     // }
     // inputList[12] = (index-1)*2 -10 ;
-
-
+    //
+    //
     // //HAUT DROITE
     // index = 1;
-    // while( (ligneHead - index) >= 0 && (colonneHead + index) < NB_COL && grille[ligneHead - index][colonneHead + index] != SNAKE ){
+    // while( (ligneHead - index) >= 0 && (colonneHead + index) < NB_COL && snake->grille[ligneHead - index][colonneHead + index] != SNAKE ){
     //     index+=1;
     // }
     // inputList[12] = (index-1)*2 -10 ;
@@ -272,7 +272,7 @@ double * getInput( Snake * snake, int nbInput) {
     //
     // //BAS DROITE
     // index = 1;
-    // while( (ligneHead + index) < NB_LIG && (colonneHead + index) < NB_COL && grille[ligneHead + index][colonneHead + index] != SNAKE ){
+    // while( (ligneHead + index) < NB_LIG && (colonneHead + index) < NB_COL && snake->grille[ligneHead + index][colonneHead + index] != SNAKE ){
     //     index+=1;
     // }
     // inputList[13] =  (index-1)*2 -10 ;
@@ -280,19 +280,19 @@ double * getInput( Snake * snake, int nbInput) {
     //
     // //HAUT GAUCHE
     // index = 1;
-    // while( (ligneHead - index) >= 0 && (colonneHead - index) >= 0  && grille[ligneHead - index][colonneHead - index] != SNAKE ){
+    // while( (ligneHead - index) >= 0 && (colonneHead - index) >= 0  && snake->grille[ligneHead - index][colonneHead - index] != SNAKE ){
     //     index+=1;
     // }
     // inputList[14] = (index-1)*2 -10 ;
     //
     // //BAS GAUCHE
     // index = 1;
-    // while( (ligneHead - index) < NB_LIG && (colonneHead - index) >= 0  && grille[ligneHead + index][colonneHead - index] != SNAKE ){
+    // while( (ligneHead - index) < NB_LIG && (colonneHead - index) >= 0  && snake->grille[ligneHead + index][colonneHead - index] != SNAKE ){
     //     index+=1;
     // }
     // inputList[15] = (index-1)*2 -10 ;
-
-    return inputList;
+    //
+    // return inputList;
 
 }
 /*
