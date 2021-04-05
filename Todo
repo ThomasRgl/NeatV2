@@ -1,0 +1,36 @@
+Struct Thread{
+    id Thread
+    NN A []
+    NN B []
+    Pop *
+}
+
+Dans le main :
+    Construire N structure Thread avec les éléments de populations nécéssaire
+    Lancer tout les threads en envopyant chaque thread dans une fonction
+
+Fonction run Thread Pere :
+    for i in range(NbGénération):
+        SendMsg(gamez)
+        waitRep(FinGamez)
+
+        SendMsg(calculFitness)
+        waitRep(FinCalculFitness)
+
+        SendMessage(Evolvez)
+        WaitRep(FinEvolvez)
+
+Fonction Run Thread Fils
+    for i in range(NbGénération):
+        waitRep(gamez)
+        game()
+        SendMsg(FinGamez)
+
+
+        waitRep(calculFitness)
+        calculFitness()
+        SendMsg(FinCalculFitness)
+
+        waitRep(Evolvez()
+        Evolvez()
+        SendMsg(FinEvolvez)
